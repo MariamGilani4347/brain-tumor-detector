@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 st.set_page_config(
     page_title="Brain Tumor Detector",
@@ -12,7 +11,9 @@ st.set_page_config(
 
 st.markdown("""
 <h1 style='text-align:center; color:#1B3A6B;'>🧠 Brain Tumor MRI Classifier</h1>
-<p style='text-align:center; color:gray;'>Upload a brain MRI scan and get an instant AI-powered classification</p>
+<p style='text-align:center; color:gray;'>
+    Upload a brain MRI scan and get an instant AI-powered classification
+</p>
 <hr>
 """, unsafe_allow_html=True)
 
@@ -21,16 +22,31 @@ IMG_SIZE = 128
 
 @st.cache_resource
 def load_model():
-    import tensorflow as tf
-    return tf.keras.models.load_model("brain_tumor_model.h5")
+    try:
+        import tflite_runtime.interpreter as tflite
+        interpreter = tflite.Interpreter(model_path="brain_tumor_model.tflite")
+    except ImportError:
+        import tensorflow as tf
+        interpreter = tf.lite.Interpreter(model_path="brain_tumor_model.tflite")
+    interpreter.allocate_tensors()
+    return interpreter
 
 try:
-    model = load_model()
-    st.success("Model loaded successfully!")
+    interpreter = load_model()
     model_loaded = True
 except Exception as e:
     model_loaded = False
     st.error(f"Model error: {e}")
+
+def predict(image):
+    input_details  = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+    img_array = np.array(image.resize((IMG_SIZE, IMG_SIZE))) / 255.0
+    img_array = np.expand_dims(img_array, axis=0).astype(np.float32)
+    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.invoke()
+    output = interpreter.get_tensor(output_details[0]['index'])
+    return output[0]
 
 if model_loaded:
     st.subheader("Upload MRI Image")
@@ -50,10 +66,7 @@ if model_loaded:
         with col2:
             st.subheader("Prediction Result")
 
-            img_array = np.array(image.resize((IMG_SIZE, IMG_SIZE))) / 255.0
-            img_array = np.expand_dims(img_array, axis=0)
-
-            predictions     = model.predict(img_array, verbose=0)[0]
+            predictions     = predict(image)
             predicted_class = CLASSES[np.argmax(predictions)]
             confidence      = np.max(predictions) * 100
 
@@ -80,7 +93,7 @@ with st.expander("About this App"):
     This app uses a MobileNetV2 deep learning model trained on the
     Brain Tumor MRI Dataset from Kaggle to classify brain MRI scans into 4 categories:
     - Glioma
-    - Meningioma  
+    - Meningioma
     - Pituitary Tumor
     - No Tumor
 
