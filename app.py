@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 from PIL import Image
-import os
+import tensorflow as tf
 
 st.set_page_config(
     page_title="Brain Tumor Detector",
