@@ -19,15 +19,9 @@ st.markdown("""
 
 CLASSES  = ['Glioma', 'Meningioma', 'No Tumor', 'Pituitary Tumor']
 IMG_SIZE = 128
-
 @st.cache_resource
 def load_model():
-    try:
-        import tflite_runtime.interpreter as tflite
-        interpreter = tflite.Interpreter(model_path="brain_tumor_model.tflite")
-    except ImportError:
-        import tensorflow as tf
-        interpreter = tf.lite.Interpreter(model_path="brain_tumor_model.tflite")
+    interpreter = tf.lite.Interpreter(model_path="brain_tumor_model.tflite")
     interpreter.allocate_tensors()
     return interpreter
 
