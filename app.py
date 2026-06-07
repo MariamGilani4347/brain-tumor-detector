@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 st.set_page_config(
     page_title="Brain Tumor Detector",
@@ -20,11 +21,12 @@ IMG_SIZE = 128
 
 @st.cache_resource
 def load_model():
-    import keras
-    return keras.models.load_model("brain_tumor_model.h5")
+    import tensorflow as tf
+    return tf.keras.models.load_model("brain_tumor_model.h5")
 
 try:
     model = load_model()
+    st.success("Model loaded successfully!")
     model_loaded = True
 except Exception as e:
     model_loaded = False
@@ -78,7 +80,7 @@ with st.expander("About this App"):
     This app uses a MobileNetV2 deep learning model trained on the
     Brain Tumor MRI Dataset from Kaggle to classify brain MRI scans into 4 categories:
     - Glioma
-    - Meningioma
+    - Meningioma  
     - Pituitary Tumor
     - No Tumor
 
